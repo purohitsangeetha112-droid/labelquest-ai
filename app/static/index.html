@@ -1,0 +1,966 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>LabelQuest — Dashboard</title>
+<style>
+:root {
+  --bg: #09090b; --card: #121215; --border: #27272a; --ink: #f8fafc; --muted: #a1a1aa;
+  --green: #22c55e; --green-bg: rgba(34,197,94,0.1);
+  --yellow: #eab308; --yellow-bg: rgba(234,179,8,0.1);
+  --red: #ef4444; --red-bg: rgba(239,68,68,0.1);
+  --blue: #3b82f6; --blue-bg: rgba(59,130,246,0.1);
+  --purple: #a855f7; --purple-bg: rgba(168,85,247,0.1);
+}
+*{box-sizing:border-box;margin:0;padding:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;}
+body { background-color: var(--bg); color: var(--ink); height: 100vh; overflow: hidden; display: flex; }
+
+/* APP LAYOUT */
+.app-container { display: flex; width: 100%; height: 100vh; }
+
+/* SIDEBAR */
+.sidebar { width: 260px; background: #000; border-right: 1px solid var(--border); padding: 24px; display: flex; flex-direction: column; }
+.logo { font-size: 24px; font-weight: 900; margin-bottom: 30px; }
+.logo span { color: var(--blue); }
+.user-profile { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; padding: 16px; background: var(--card); border-radius: 16px; border: 1px solid var(--border); }
+.avatar { width: 40px; height: 40px; background: var(--blue-bg); border: 2px solid var(--blue); border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 24px; }
+.user-name { font-weight: 800; font-size: 14px; }
+.user-rank { font-size: 11px; color: var(--muted); }
+.nav-menu { display: flex; flex-direction: column; gap: 8px; flex: 1; }
+.nav-item { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 12px; color: var(--muted); font-weight: 700; font-size: 14px; cursor: pointer; transition: all 0.2s; border: 1px solid transparent; }
+.nav-item:hover { background: var(--card); color: var(--ink); }
+.nav-item.active { background: var(--blue-bg); color: var(--blue); border-color: rgba(59,130,246,0.3); }
+.nav-stats { margin-top: auto; padding-top: 20px; border-top: 1px solid var(--border); display: flex; flex-direction: column; gap: 10px; }
+.mini-stat { display: flex; justify-content: space-between; font-size: 13px; font-weight: 700; color: var(--muted); }
+.mini-stat span:last-child { color: var(--ink); }
+
+/* MAIN CONTENT */
+.main-content { flex: 1; overflow-y: auto; padding: 30px; background: radial-gradient(circle at 50% 0%, rgba(59,130,246,0.05), transparent 50%); }
+.top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+.page-title { font-size: 28px; font-weight: 900; }
+.page-sub { color: var(--muted); font-size: 14px; margin-top: 4px; }
+
+/* SCANNER */
+.scanner-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 24px; }
+.upload-card { background: var(--card); border: 1px solid var(--border); border-radius: 24px; padding: 40px; text-align: center; display: flex; flex-direction: column; justify-content: center; align-items: center; border: 2px dashed var(--border); transition: all 0.3s; position: relative; min-height: 400px;}
+.upload-card:hover { border-color: var(--blue); background: rgba(59,130,246,0.02); }
+.upload-icon { font-size: 64px; margin-bottom: 20px; }
+.upload-title { font-size: 24px; font-weight: 900; margin-bottom: 8px; }
+.upload-sub { color: var(--muted); font-size: 14px; margin-bottom: 24px; max-width: 300px; }
+#fileInput { display: none; }
+.btn-upload { background: var(--blue); color: #fff; padding: 14px 32px; border-radius: 12px; font-weight: 800; cursor: pointer; transition: all 0.2s; }
+.btn-upload:hover { background: #2563eb; transform: translateY(-2px); }
+
+.tips-panel { display: flex; flex-direction: column; gap: 16px; }
+.tip-card { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 20px; }
+.tip-title { font-size: 14px; font-weight: 800; margin-bottom: 12px; color: var(--blue); }
+.tip-text { font-size: 14px; color: var(--ink); line-height: 1.6; font-style: italic; }
+
+/* GAME CENTER */
+.worlds-container { display: flex; flex-direction: column; gap: 30px; }
+.world-section { background: var(--card); border: 1px solid var(--border); border-radius: 24px; padding: 24px; }
+.world-header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+.world-title { font-size: 20px; font-weight: 900; }
+.level-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(70px, 1fr)); gap: 12px; }
+.level-box { background: var(--bg); border: 2px solid var(--border); border-radius: 16px; aspect-ratio: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer; transition: all 0.2s; position: relative; }
+.level-box:hover { transform: translateY(-4px); border-color: var(--blue); box-shadow: 0 8px 20px rgba(59,130,246,0.2); }
+.level-box.locked { opacity: 0.3; cursor: not-allowed; border-style: dashed; }
+.level-box.locked:hover { transform: none; border-color: var(--border); box-shadow: none; }
+.level-num { font-size: 20px; font-weight: 900; color: var(--muted); }
+.level-box:not(.locked) .level-num { color: var(--blue); }
+.level-stars { font-size: 10px; margin-top: 4px; letter-spacing: 1px; }
+.type-icon { position: absolute; top: 6px; right: 6px; font-size: 12px; }
+
+/* LEADERBOARD & LIVE FEED */
+.leaderboard-layout { display: grid; grid-template-columns: 2fr 1fr; gap: 24px; height: calc(100vh - 120px); }
+.leaderboard-table-container { background: var(--card); border-radius: 24px; border: 1px solid var(--border); overflow-y: auto; height: 100%; }
+.leaderboard-table { width: 100%; border-collapse: collapse; }
+.leaderboard-table th { position: sticky; top: 0; background: var(--card); z-index: 10; text-align: left; padding: 16px 24px; color: var(--muted); font-size: 12px; text-transform: uppercase; border-bottom: 1px solid var(--border); }
+.leaderboard-table td { padding: 14px 24px; border-bottom: 1px solid var(--border); font-weight: 700; font-size: 15px; transition: background 0.3s; }
+.leaderboard-table tr:last-child td { border-bottom: none; }
+.leaderboard-table tr.current-user { background: var(--blue-bg); border-left: 4px solid var(--blue); }
+.rank-badge { font-size: 16px; font-weight: 900; color: var(--muted); width: 40px; display: inline-block; }
+.rank-badge.top-1 { color: #fbbf24; font-size: 20px;} .rank-badge.top-2 { color: #94a3b8; font-size: 18px;} .rank-badge.top-3 { color: #b45309; font-size: 18px;}
+
+/* LIVE FEED */
+.live-feed-card { background: var(--card); border: 1px solid var(--border); border-radius: 24px; padding: 20px; display: flex; flex-direction: column; height: 100%; }
+.live-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; font-weight: 900; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; }
+.live-title { display: flex; align-items: center; gap: 8px; color: var(--red); }
+.pulse-dot { width: 8px; height: 8px; background: var(--red); border-radius: 50%; animation: pulse 1.5s infinite; }
+@keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(239,68,68,0.7); } 70% { box-shadow: 0 0 0 10px rgba(239,68,68,0); } 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0); } }
+.feed-list { display: flex; flex-direction: column; gap: 12px; overflow-y: auto; flex: 1; padding-right: 8px; }
+.feed-item { font-size: 13px; color: var(--muted); line-height: 1.4; padding-bottom: 12px; border-bottom: 1px solid var(--border); animation: slideIn 0.3s ease; }
+.feed-item b { color: var(--ink); font-weight: 800; }
+.feed-time { font-size: 10px; color: var(--blue); margin-top: 4px; display: block; }
+@keyframes slideIn { from { opacity: 0; transform: translateX(10px); } to { opacity: 1; transform: translateX(0); } }
+
+/* SETTINGS */
+.settings-card { background: var(--card); border: 1px solid var(--border); border-radius: 24px; padding: 30px; max-width: 600px; }
+.setting-row { display: flex; justify-content: space-between; align-items: center; padding: 20px 0; border-bottom: 1px solid var(--border); }
+.setting-row:last-child { border-bottom: none; }
+.setting-info h3 { font-size: 16px; font-weight: 800; margin-bottom: 4px; }
+.setting-info p { font-size: 13px; color: var(--muted); }
+.toggle-switch { position: relative; width: 50px; height: 28px; }
+.toggle-switch input { opacity: 0; width: 0; height: 0; }
+.slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: var(--border); transition: .4s; border-radius: 34px; }
+.slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
+input:checked + .slider { background-color: var(--green); }
+input:checked + .slider:before { transform: translateX(22px); }
+.btn-danger { background: var(--red); color: #fff; padding: 12px 24px; border: none; border-radius: 12px; font-weight: 800; cursor: pointer; transition: 0.2s; }
+.btn-danger:hover { background: #dc2626; }
+
+/* SCANNER RESULT */
+.result-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+.card { background: var(--card); border: 1px solid var(--border); border-radius: 24px; padding: 24px; }
+.prod-head { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; }
+.prod-emoji { font-size: 48px; }
+.prod-name { font-size: 22px; font-weight: 900; }
+.prod-sub { font-size: 13px; color: var(--muted); font-weight: 600; text-transform: uppercase; margin-top: 4px; }
+.light { display: flex; align-items: center; gap: 12px; padding: 18px; border-radius: 16px; font-weight: 800; font-size: 18px; margin-bottom: 20px; }
+.light.green { background: var(--green-bg); color: var(--green); border: 1px solid rgba(34,197,94,0.2); }
+.light.yellow { background: var(--yellow-bg); color: var(--yellow); border: 1px solid rgba(234,179,8,0.2); }
+.light.red { background: var(--red-bg); color: var(--red); border: 1px solid rgba(239,68,68,0.2); }
+.dot { width: 18px; height: 18px; border-radius: 50%; }
+.dot.green { background: var(--green); } .dot.yellow { background: var(--yellow); } .dot.red { background: var(--red); }
+.reality { padding: 20px; border-radius: 16px; font-size: 15px; line-height: 1.6; font-weight: 500; margin-bottom: 20px; border: 1px solid var(--border); }
+.reality.danger { background: var(--red-bg); border-color: rgba(239,68,68,0.3); color: #fca5a5; }
+.reality.warning { background: var(--yellow-bg); border-color: rgba(234,179,8,0.3); color: #fde047; }
+.reality.safe { background: var(--green-bg); border-color: rgba(34,197,94,0.3); color: #86efac; }
+.reality b { font-size: 18px; display: block; margin-bottom: 4px; }
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px; }
+.stat { background: var(--bg); border: 1px solid var(--border); border-radius: 16px; padding: 16px; }
+.stat .k { font-size: 11px; color: var(--muted); font-weight: 800; text-transform: uppercase; }
+.stat .v { font-size: 24px; font-weight: 900; margin-top: 6px; }
+.profile-tabs { display: flex; gap: 12px; margin-bottom: 16px; }
+.profile-btn { flex: 1; padding: 14px; border-radius: 12px; border: 1px solid var(--border); background: var(--bg); font-weight: 800; cursor: pointer; color: var(--muted); }
+.profile-btn.active-child { border-color: var(--blue); color: var(--blue); background: var(--blue-bg); }
+.profile-btn.active-adult { border-color: var(--purple); color: var(--purple); background: var(--purple-bg); }
+.precaution-box { border-radius: 12px; padding: 16px; font-size: 14px; font-weight: 500; line-height: 1.5; margin-bottom: 12px; }
+.advice-box { background: var(--blue-bg); color: #93c5fd; border: 1px solid rgba(59,130,246,0.3); }
+.warning-box { background: rgba(234,179,8,0.1); color: #fde047; border: 1px solid rgba(234,179,8,0.3); }
+.swap-box { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; border-radius: 12px; padding: 16px; font-size: 14px; font-weight: 500; line-height: 1.6; margin-bottom: 12px; }
+.swap-box .highlight { font-weight: 900; color: #15803d; }
+.swap-list { margin-top: 10px; padding-left: 20px; }
+.warn { font-size: 14px; font-weight: 700; padding: 14px; border-radius: 12px; margin-bottom: 8px; background: var(--red-bg); color: #fca5a5; }
+.warn.ok { background: var(--green-bg); color: #86efac; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { font-size: 13px; font-weight: 600; padding: 8px 14px; border-radius: 8px; background: var(--bg); border: 1px solid var(--border); }
+.chip.allergen { background: var(--red-bg); color: #fca5a5; }
+.raw-text-box { background: var(--bg); border: 1px solid var(--border); padding: 16px; border-radius: 12px; font-size: 12px; color: var(--muted); font-family: monospace; max-height: 150px; overflow-y: auto; white-space: pre-wrap; }
+
+/* OVERLAYS & UTILS */
+.hidden { display: none !important; }
+.quiz-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(9,9,11,0.9); backdrop-filter: blur(8px); z-index: 100; display: flex; justify-content: center; align-items: center; }
+.quiz-modal { background: var(--card); border: 1px solid var(--border); border-radius: 24px; width: 100%; max-width: 600px; padding: 30px; }
+.battle-header { display: flex; justify-content: space-between; margin-bottom: 24px; align-items: center; }
+.hp-bar { height: 10px; background: #333; border-radius: 99px; margin-top: 8px; overflow: hidden; }
+.hp-fill { height: 100%; background: var(--green); width: 100%; transition: width 0.3s; }
+.hp-fill.bot { background: var(--red); }
+.question-box { text-align: center; margin-bottom: 24px; }
+.opt { display: block; width: 100%; text-align: left; padding: 16px; margin-bottom: 12px; background: var(--bg); border: 2px solid var(--border); border-radius: 12px; color: var(--ink); font-size: 15px; font-weight: 600; cursor: pointer; }
+.opt.correct { border-color: var(--green); background: var(--green-bg); }
+.opt.wrong { border-color: var(--red); background: var(--red-bg); }
+.toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(100px); background: var(--blue); color: #fff; padding: 16px 24px; border-radius: 12px; font-weight: 700; transition: transform 0.3s; z-index: 200; }
+.toast.show { transform: translateX(-50%) translateY(0); }
+.confetti { position: fixed; width: 10px; height: 10px; z-index: 1000; animation: fall 2s linear forwards; }
+@keyframes fall { to { transform: translateY(100vh) rotate(720deg); opacity: 0; } }
+#loadingEmoji { display: block; font-size: 64px; animation: spin 2s linear infinite; margin: 0 auto; }
+@keyframes spin { 100% { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<div class="app-container">
+  
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="logo">Label<span>Quest</span></div>
+    
+    <div class="user-profile">
+      <div class="avatar">🕵️‍♀️</div>
+      <div>
+        <div class="user-name">Detective</div>
+        <div class="user-rank">Rank: <span id="playerRank" style="color:var(--purple);">Rookie</span></div>
+      </div>
+    </div>
+
+    <div class="nav-menu">
+      <div class="nav-item active" id="nav-scan" onclick="switchTab('scan')">📷 Scanner</div>
+      <div class="nav-item" id="nav-game" onclick="switchTab('game')">🎮 Game Center</div>
+      <div class="nav-item" id="nav-leaderboard" onclick="switchTab('leaderboard')">🏆 Leaderboard</div>
+      <div class="nav-item" id="nav-settings" onclick="switchTab('settings')">⚙️ Settings</div>
+    </div>
+
+    <div class="nav-stats">
+      <div class="mini-stat"><span>🪙 Coins</span> <span id="statCoins">0</span></div>
+      <div class="mini-stat"><span>⭐ Stars</span> <span id="statStars">0</span></div>
+      <div class="mini-stat"><span>🏆 Level</span> <span id="statLevel">1</span></div>
+      <div class="mini-stat"><span>XP</span> <span id="xpText">0 / 100</span></div>
+    </div>
+  </div>
+
+  <!-- MAIN CONTENT -->
+  <div class="main-content">
+    
+    <!-- SCANNER SCREEN -->
+    <section id="screen-home" class="screen">
+      <div class="top-bar">
+        <div>
+          <div class="page-title">Scanner Dashboard</div>
+          <div class="page-sub">Scan any food label to reveal its true nutritional value.</div>
+        </div>
+      </div>
+      
+      <div class="scanner-grid">
+        <label class="upload-card" for="fileInput">
+          <div class="upload-icon">📸</div>
+          <div class="upload-title">Upload Food Label</div>
+          <div class="upload-sub">Take a clear photo of the back of any packet to analyze sugar, salt, and fat.</div>
+          <div class="btn-upload">Choose Image</div>
+          <input id="fileInput" type="file" accept="image/*" />
+        </label>
+        
+        <div class="tips-panel">
+          <div class="tip-card" style="background: linear-gradient(135deg, var(--card), #18181b); border-color: var(--blue);">
+            <div class="tip-title" style="color: var(--yellow); font-size: 16px;">🌟 Quote of the Day</div>
+            <div class="tip-text" id="dailyQuoteText">Loading quote...</div>
+          </div>
+          <div class="tip-card">
+            <div class="tip-title">💡 Did you know?</div>
+            <div class="tip-text">"No Added Sugar" does not mean healthy. It can still contain natural sugars or artificial sweeteners!</div>
+          </div>
+          <div class="tip-card">
+            <div class="tip-title">🧂 Salt Alert</div>
+            <div class="tip-text">A snack with more than 300mg of Sodium per serving is considered high. It raises blood pressure.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- GAME CENTER SCREEN -->
+    <section id="screen-game" class="screen hidden">
+      <div class="top-bar">
+        <div>
+          <div class="page-title">Game Center</div>
+          <div class="page-sub">Complete levels to become a Label Master.</div>
+        </div>
+        <div style="text-align:right;">
+          <div class="page-title" style="color:var(--yellow); font-size:24px;"><span id="totalXpDisplay">0</span> XP</div>
+        </div>
+      </div>
+      <div class="worlds-container" id="worldsContainer"></div>
+    </section>
+
+    <!-- LEADERBOARD SCREEN -->
+    <section id="screen-leaderboard" class="screen hidden">
+      <div class="top-bar">
+        <div>
+          <div class="page-title">Global Leaderboard</div>
+          <div class="page-sub">You are ranked against 100 players worldwide.</div>
+        </div>
+        <div style="display:flex; align-items:center; gap:8px; background:var(--green-bg); color:var(--green); padding:8px 16px; border-radius:99px; font-weight:800; font-size:14px;">
+          <div class="pulse-dot" style="background:var(--green);"></div> 100+ Players Online
+        </div>
+      </div>
+      
+      <div class="leaderboard-layout">
+        <div class="leaderboard-table-container">
+          <table class="leaderboard-table">
+            <thead>
+              <tr>
+                <th style="width: 80px;">Rank</th>
+                <th>Player</th>
+                <th>Level</th>
+                <th style="text-align: right;">XP</th>
+              </tr>
+            </thead>
+            <tbody id="leaderboardBody">
+              <!-- Rows injected by JS -->
+            </tbody>
+          </table>
+        </div>
+
+        <div class="live-feed-card">
+          <div class="live-header">
+            <div class="live-title"><div class="pulse-dot"></div> Live Activity</div>
+          </div>
+          <div class="feed-list" id="liveFeed">
+            <!-- Live feed injected by JS -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SETTINGS SCREEN -->
+    <section id="screen-settings" class="screen hidden">
+      <div class="top-bar">
+        <div>
+          <div class="page-title">Settings</div>
+          <div class="page-sub">Manage your app preferences and data.</div>
+        </div>
+      </div>
+      <div class="settings-card">
+        <div class="setting-row">
+          <div class="setting-info">
+            <h3>Sound Effects</h3>
+            <p>Play sounds when you win battles.</p>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+        <div class="setting-row">
+          <div class="setting-info">
+            <h3>Daily Reminders</h3>
+            <p>Get a notification to scan a new product.</p>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox">
+            <span class="slider"></span>
+          </label>
+        </div>
+        <div class="setting-row">
+          <div class="setting-info">
+            <h3>Reset Progress</h3>
+            <p>Delete all XP, Coins, and unlocked levels. This cannot be undone.</p>
+          </div>
+          <button class="btn-danger" onclick="resetData()">Reset Data</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- RESULT SCREEN -->
+    <section id="screen-result" class="screen hidden">
+      <div class="top-bar">
+        <div>
+          <div class="page-title">Scan Results</div>
+          <div class="page-sub">Detailed health analysis of your product.</div>
+        </div>
+        <button class="btn-upload" onclick="switchTab('scan')" style="background:transparent; border:1px solid var(--border); color:var(--ink);">↺ New Scan</button>
+      </div>
+
+      <div class="result-layout">
+        <div class="card">
+          <div class="prod-head">
+            <div class="prod-emoji">📦</div>
+            <div>
+              <div class="prod-name" id="resName">Product</div>
+              <div class="prod-sub" id="resServings">Servings</div>
+            </div>
+          </div>
+          <div class="light red" id="resLight"><span class="dot red"></span><span>High Concern</span></div>
+          <div class="reality danger" id="resReality">Warning text</div>
+          <div class="section-label" style="font-size:12px; font-weight:800; color:var(--muted); margin-bottom:12px;">NUTRITION</div>
+          <div class="grid" id="resStats"></div>
+          <div id="resWarnings"></div>
+          <div class="chips" id="resAllergens" style="margin-top:16px;"></div>
+        </div>
+
+        <div>
+          <div class="card" style="margin-bottom:24px;">
+            <div class="profile-tabs">
+              <button class="profile-btn active-child" onclick="setProfile('child')">👦 Child View</button>
+              <button class="profile-btn" onclick="setProfile('adult')">🧑 Adult View</button>
+            </div>
+            <div class="precaution-box advice-box" id="resAdvice">Advice</div>
+            <div class="precaution-box warning-box" id="resPrecaution">Precaution</div>
+            <div class="swap-box" id="resSwap">Swap advice</div>
+          </div>
+          <div class="card">
+            <div class="tip-title" style="margin-bottom:12px;">Ingredients</div>
+            <div class="chips" id="resIngredients"></div>
+            <div class="tip-title" style="margin-top:24px; margin-bottom:12px;">Raw OCR Text</div>
+            <div class="raw-text-box" id="resRawText"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<!-- BATTLE OVERLAY -->
+<div id="quizOverlay" class="quiz-overlay hidden">
+  <div class="quiz-modal">
+    <div class="battle-header">
+      <div class="fighter" style="text-align:center; width:80px;">
+        <div style="font-size:32px;">🕵️‍♀️</div>
+        <div style="font-weight:800; font-size:11px;">YOU</div>
+        <div class="hp-bar"><div class="hp-fill" id="playerHp"></div></div>
+      </div>
+      <div style="font-size:20px; font-weight:900; color:var(--yellow);">VS</div>
+      <div class="fighter" style="text-align:center; width:80px;">
+        <div style="font-size:32px;">🤖</div>
+        <div style="font-weight:800; font-size:11px;">BOT</div>
+        <div class="hp-bar"><div class="hp-fill bot" id="botHp"></div></div>
+      </div>
+    </div>
+    <div class="question-box">
+      <div style="font-size:11px; font-weight:800; color:var(--blue); margin-bottom:8px;" id="battleType">QUICK QUIZ</div>
+      <h2 id="questionText">Question</h2>
+    </div>
+    <div id="optionsContainer"></div>
+    <div id="feedbackText" style="text-align:center; font-weight:800; margin-top:16px; height:20px;"></div>
+    <button class="btn-upload" onclick="closeQuiz()" style="width:100%; margin-top:20px; background:transparent; border:1px solid var(--border); color:var(--muted);">Quit</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// --- DAILY QUOTES ---
+const DAILY_QUOTES = [
+  "Your diet is a bank account. Good food choices are good investments. – Bethenny Frankel", "Take care of your body. It's the only place you have to live. – Jim Rohn",
+  "The food you eat can be either the safest and most powerful form of medicine. – Ann Wigmore", "To eat is a necessity, but to eat intelligently is an art. – François de La Rochefoucauld",
+  "Don't eat anything your great-grandmother wouldn't recognize as food. – Michael Pollan", "Healthy citizens are the greatest asset any country can have. – Winston Churchill",
+  "Read the label. If you can't pronounce it, maybe your body doesn't need it.", "Sugar is the new tobacco. It's hidden in everything.",
+  "Fruits and veggies: the original fast food.", "A snack is not a meal. Eat to nourish, not just to fill.",
+  "Your heart works 24/7. Give it some good olive oil.", "Sodium hides in bread, sauces, and chips. Be a salt detective.",
+  "Protein builds muscles, sugar builds cavities. Choose wisely.", "Sip water, not sugar. Your kidneys will thank you.",
+  "Roasted chana > Potato chips. Every single time.", "Drink a glass of water before every meal. It helps with portions.",
+  "The best exercise is the one you actually do.", "Don't drink your calories. Eat your fruit, don't juice it.",
+  "Palm oil is everywhere. Check your biscuits!", "Allergens are serious. Always read the 'Contains' section.",
+  "Millets are the ancient superfoods. Try Ragi or Jowar!", "A handful of almonds is a better snack than a candy bar.",
+  "Sleep is just as important as diet for your health.", "Stress makes you crave sugar. Try deep breathing instead.",
+  "Eggs are a perfect protein source. Don't fear the yolk!", "Fish is brain food. Omega-3s are amazing for you.",
+  "Spinach is packed with iron. Add lemon to absorb it better.", "Turmeric is anti-inflammatory. Add it to your dal.",
+  "A medium apple has 4 grams of fiber. A perfect snack.", "Broccoli is a superfood. Steam it, don't fry it.",
+  "Coconut water is nature's sports drink. High in potassium.", "Buttermilk (Chaas) cools your stomach and aids digestion.",
+  "Portion size matters more than what you eat sometimes.", "Don't shop for groceries when you're hungry. You'll buy junk.",
+  "The daily limit for added sugar is about 25g (6 teaspoons).", "A single can of soda has more than your daily limit of sugar.",
+  "Sodium limit per day is 2000mg. A bag of chips has half of that.", "Saturated fats raise your bad cholesterol. Keep them under 2g per serving.",
+  "Whole foods don't need labels. Apples don't have ingredient lists.", "Cook at home. You control the salt, sugar, and oil.",
+  "Bake or grill instead of deep frying. Save your heart.", "Eat at the table, not in front of the TV. Mindful eating.",
+  "Stop eating when you are 80% full. Hara Hachi Bu.", "Complex carbs give energy. Simple carbs (sugar) give a crash.",
+  "Check the serving size! Sometimes a packet is 2 or 3 servings.", "If you eat the whole packet, multiply the calories by the servings.",
+  "Watermelon is 92% water. Great for hydration.", "Sweet potatoes are healthier than regular potato fries.",
+  "Cinnamon can help stabilize blood sugar. Add it to your oats.", "Ginger aids digestion. Make ginger tea.",
+  "Stay away from trans fats. They are banned in many countries.", "Don't reuse cooking oil. It creates harmful compounds.",
+  "Eat slowly. It takes 20 minutes for your brain to know you're full.", "Use smaller plates to trick your brain into eating less.",
+  "A balanced plate: 50% veggies, 25% protein, 25% carbs.", "Rajma (Kidney beans) is a protein and fiber powerhouse.",
+  "Paneer is high in protein but also high in fat. Enjoy in moderation.", "Fish like salmon and mackerel are rich in Omega-3.",
+  "Boiled eggs are one of the best snacks you can have.", "Soy milk has similar protein to cow's milk.",
+  "Probiotics feed the good bacteria in your gut.", "Take a 10-minute walk after meals to help digestion.",
+  "Stand up every hour if you have a desk job.", "Consistency beats intensity. 20 mins a day is better than 2 hrs once a week.",
+  "Sleep 7-8 hours. Lack of sleep increases hunger hormones.", "Don't reward yourself with junk food. Reward with a movie or new clothes.",
+  "One unhealthy meal won't make you fat, just like one salad won't make you thin.", "Focus on progress, not perfection.",
+  "Check the ingredients list. The first 3 items make up most of the product.", "Beware of 'Natural Flavors'. It's a loophole for chemicals.",
+  "100% fruit juice is still high in sugar. Eat the fruit.", "Instant noodles are high in sodium and fat. Add veggies to them.",
+  "Sports drinks are only needed for intense exercise. Water is enough otherwise.", "Dark chocolate (70%+) is a healthy treat in small amounts.",
+  "Use jaggery or dates instead of white sugar where possible.", "Eat a protein-rich breakfast to avoid mid-morning cravings.",
+  "Bitter gourd (Karela) is great for blood sugar regulation.", "Turmeric milk (Haldi doodh) is anti-inflammatory.",
+  "Amla (Indian Gooseberry) is a Vitamin C powerhouse.", "Eat warm food. It's easier to digest than cold food.",
+  "Don't drink ice-cold water with meals. It hinders digestion.", "Soak vegetables in salt water for 10 mins to remove pesticides.",
+  "Eat seasonal. Don't eat mangoes in December.", "Late-night eating leads to weight gain. Stop eating 2 hours before bed.",
+  "Include a source of protein in every meal.", "Don't stock junk food at home. If it's not there, you won't eat it.",
+  "Plan your meals for the week. It prevents impulse ordering.", "Drink green smoothies for a nutrient boost.",
+  "Chew your food 20-30 times before swallowing.", "Turn off the TV and put away your phone at meal times.",
+  "Food is fuel, not therapy.", "If you're sad, call a friend, don't order a pizza.",
+  "Find a hobby to replace snacking.", "Roasted makhana is the perfect guilt-free snack.",
+  "Homemade hummus with carrot sticks is a great dip.", "Greek yogurt with berries is a perfect dessert.",
+  "Edamame (soybeans) is a great high-protein snack.", "Sprouts chaat is packed with protein.",
+  "Dhokla is a fermented, steamed, healthy snack.", "Idli is one of the healthiest breakfasts. Steamed, no oil.",
+  "Poha with peanuts and lemon is iron-rich.", "Vegetable dalia is high in fiber.",
+  "Coconut chutney is healthy, but limit the sugar.", "Rasam is great for digestion and colds.",
+  "Use less oil when making roti.", "Add flaxseed powder to your roti dough.",
+  "Eat the skin of apples and cucumbers. It has most of the fiber.", "Make a vegetable soup. It's filling and low calorie.",
+  "Avoid mayonnaise and heavy salad dressings.", "Hot sauce is a better alternative to ketchup.",
+  "Lemon juice adds flavor without needing salt.", "MSG is safe in moderation, but it's high in sodium.",
+  "Check the expiry date before buying anything.", "Always wash your hands before cooking.",
+  "Don't leave food out for more than 2 hours.", "Drink filtered water if you are unsure of the source.",
+  "Add a pinch of salt and sugar to water during extreme heat.", "Avoid eating heavy fried foods in summer.",
+  "Get some sunlight in the morning for Vitamin D.", "Exercise outdoors when the air is clean.",
+  "Avoid smoking and secondhand smoke.", "Limit alcohol. It's empty calories and bad for the liver.",
+  "Water is the best drink.", "Limit coffee to 2-3 cups a day.",
+  "Try to reduce sugar in your chai gradually.", "Green tea has less caffeine.",
+  "Carbs are not the enemy. Bad carbs are.", "Protein is essential for everyone, not just bodybuilders.",
+  "Real food is better than supplements.", "Sleep is the best energy drink.",
+  "Don't use your phone an hour before bed.", "Wake up at the same time every day.",
+  "Your digestive system works best on a schedule.", "Breakfast should have protein, fiber, and healthy fat.",
+  "Add chia seeds to your morning water.", "Add spinach to your smoothie. You won't taste it.",
+  "It stops you from binging at dinner.", "Finish dinner 3 hours before sleeping.",
+  "Your gut health determines your immunity.", "Curd is a probiotic. Include it in your meals.",
+  "Avoid store-bought dressings (hidden sugar and salt).", "It fills you up with fiber.",
+  "Brown bread is not always whole wheat. Check the label.", "Keep fruit on the counter, not hidden in the fridge.",
+  "If you're not hungry enough to eat an apple, you're not hungry.", "Distract yourself with a task.",
+  "Snack on cucumber or carrots.", "You will eat more than you realize.",
+  "Eat mindfully.", "Stop eating when you're satisfied, not stuffed.",
+  "Listen to your body.", "Say no to office birthday cake politely.",
+  "Make healthy swaps for your favorite meals.", "Use a non-stick pan to use less oil.",
+  "Read the label on your cooking oil.", "Mustard oil is good for Indian cooking.",
+  "Air frying is a better alternative.", "Steaming preserves nutrients.",
+  "The more colors, the more nutrients.", "Berries are low sugar and high antioxidants.",
+  "Bananas give instant energy.", "Apples are rich in fiber.",
+  "Yogurt is great for gut health.", "Paneer is high in protein and calcium.",
+  "Dal is a staple Indian superfood.", "Chickpeas are versatile and healthy.",
+  "Spinach is a superfood.", "Tomatoes are rich in lycopene.",
+  "Ginger aids digestion.", "Turmeric reduces inflammation.",
+  "Fennel seeds help with bloating.", "Nuts are a great source of healthy fats.",
+  "Walnuts are rich in Omega-3.", "Chia seeds are a superfood.",
+  "Pumpkin seeds are rich in zinc.", "Peanuts are a cheap and healthy protein.",
+  "Makhana is low in calories and high in calcium.", "Oats are great for the heart.",
+  "Quinoa is a complete protein.", "Millets are a great sustainable food.",
+  "Ragi is extremely rich in calcium.", "Bajra keeps the body warm in winter.",
+  "Potatoes are healthy when boiled, not fried.", "Peas are rich in protein.",
+  "Mushrooms are low calorie and high in antioxidants.", "Cauliflower is a low-carb alternative to rice.",
+  "Bottle gourd is great for hydration.", "Okra is great for gut health.",
+  "Beetroot is great for blood pressure.", "Onions are great for immunity.",
+  "Garlic is a natural antibiotic.", "Guava has more Vitamin C than oranges.",
+  "Pineapple is great for inflammation.", "Muskmelon is low calorie and sweet.",
+  "Kiwi is great for sleep.", "Strawberries are low sugar and high Vitamin C.",
+  "Raspberries are very high in fiber.", "Dates are a great natural sweetener.",
+  "Raisins are great for iron.", "Prunes are great for digestion.",
+  "Coconut is a great source of healthy fat.", "Honey has antibacterial properties.",
+  "Yogurt is a great probiotic.", "Cheese is a great source of calcium.",
+  "Chicken is a great source of lean protein.", "Lean meat is a great protein source.",
+  "Processed meat is high in sodium and nitrates.", "Hydration is key to good health.",
+  "Walking is the best exercise.", "It adds steps to your day.",
+  "Stretching prevents injury.", "Deep breathing reduces stress.",
+  "Sleep is when your body repairs itself.", "Rest is just as important as work.",
+  "Laughter is the best medicine.", "Love yourself first.",
+  "Gratitude improves mental health.", "Mindfulness is key.",
+  "Good things take time.", "Consistency is the secret to success.",
+  "You are doing great!", "You can do it!"
+];
+
+// --- DYNAMIC BOT GENERATION ---
+const firstNames = ["Alex", "Priya", "Rahul", "Chen", "Sarah", "John", "Fatima", "Ravi", "Emily", "Karan", "Aisha", "David", "Sofia", "Yuki", "Liam", "Mia", "Noah", "Olivia", "Ethan", "Ava", "Arjun", "Neha", "Vikram", "Ananya", "Rohan", "Isha", "Kabir", "Zoya", "Aditya", "Sneha"];
+const lastNames = ["Smith", "Patel", "Kumar", "Wang", "Johnson", "Doe", "Ali", "Sharma", "Brown", "Singh", "Khan", "Wilson", "Garcia", "Tanaka", "Miller", "Davis", "Gupta", "Reddy", "Joshi", "Nair", "Das", "Mehta", "Chawla", "Bhat", "Iyer"];
+const tags = ["SnackMaster", "HealthFreak", "Foodie", "Nutritionist", "GymRat", "CalorieCounter", "SugarFree", "SaltBae", "FatBurner", "VeggieTales", "FruitNinja", "LabelReader", "DietGuru", "FitFam", "WellnessWarrior", "MacroTracker", "KetoKing", "VeganVibes", "GlutenFree", "OrganicOnly"];
+const avatars = ["🤖", "🕵️‍♂️", "🍪", "🥷", "🥦", "🍎", "🥑", "🥕", "🍉", "🍇", "🍓", "🥩", "🍕", "🍔", "🍟", "🍩", "🍿", "🥤", "🍵", "🍫", "🍬", "🥗", "🍳", "🥛", "🐟", "🍗", "🥜", "🌰", "🍞", "🧀"];
+const countries = ["🇮🇳", "🇺🇸", "🇬🇧", "🇨🇦", "🇦🇺", "🇩🇪", "🇫🇷", "🇯🇵", "🇧🇷", "🇿🇦", "🇸🇬", "🇦🇪", "🇲🇽", "🇮🇹", "🇪🇸", "🇰🇷", "🇳🇱", "🇸🇪", "🇨🇭", "🇳🇿"];
+
+function generateBots(count) {
+  const generated = [];
+  for (let i = 0; i < count; i++) {
+    const name = `${tags[Math.floor(Math.random()*tags.length)]} ${Math.floor(Math.random()*999)}`;
+    const avatar = avatars[Math.floor(Math.random()*avatars.length)];
+    const country = countries[Math.floor(Math.random()*countries.length)];
+    const level = Math.floor(Math.random() * 25) + 1;
+    const xp = Math.floor(Math.random() * 3000);
+    generated.push({ id: `bot_${i}`, name, avatar, level, xp, country });
+  }
+  return generated;
+}
+
+// --- STATE & INIT ---
+const state = {
+  player: {
+    xp: parseInt(localStorage.getItem('lq_xp') || '0'),
+    level: parseInt(localStorage.getItem('lq_level') || '1'),
+    coins: parseInt(localStorage.getItem('lq_coins') || '0'),
+    stars: parseInt(localStorage.getItem('lq_stars') || '0'),
+    unlockedMax: parseInt(localStorage.getItem('lq_unlocked') || '1'),
+    levelStars: JSON.parse(localStorage.getItem('lq_level_stars') || '{}')
+  },
+  scannerProduct: null,
+  profileMode: 'child'
+};
+
+let bots = JSON.parse(localStorage.getItem('lq_bots'));
+if (!bots || bots.length < 100) {
+  bots = generateBots(100);
+  localStorage.setItem('lq_bots', JSON.stringify(bots));
+}
+
+const botActions = [
+  "defeated a Boss Fight", "scanned a high-sugar product", "unlocked the 'Sugar Detective' badge",
+  "earned 50 XP", "failed a Speed Round", "scanned Maggi Noodles", "found 1840mg of Sodium in a snack",
+  "completed Level 12", "switched to Child View", "found a healthy alternative", "scanned a new label", 
+  "won a battle against SnackBot", "spent 50 Coins"
+];
+
+function saveBots() { localStorage.setItem('lq_bots', JSON.stringify(bots)); }
+
+function saveState() {
+  localStorage.setItem('lq_xp', state.player.xp);
+  localStorage.setItem('lq_level', state.player.level);
+  localStorage.setItem('lq_coins', state.player.coins);
+  localStorage.setItem('lq_stars', state.player.stars);
+  localStorage.setItem('lq_unlocked', state.player.unlockedMax);
+  localStorage.setItem('lq_level_stars', JSON.stringify(state.player.levelStars));
+}
+
+const $ = id => document.getElementById(id);
+function toast(msg){ const el = $('toast'); el.textContent = msg; el.classList.add('show'); setTimeout(()=>el.classList.remove('show'), 3000); }
+
+function setDailyQuote() {
+  const now = new Date();
+  const start = new Date(now.getFullYear(), 0, 0);
+  const diff = now - start;
+  const oneDay = 1000 * 60 * 60 * 24;
+  const dayOfYear = Math.floor(diff / oneDay);
+  const quote = DAILY_QUOTES[dayOfYear % DAILY_QUOTES.length];
+  $('dailyQuoteText').innerHTML = `"${quote}"`;
+}
+
+// --- BOT SIMULATION ENGINE (Runs in background) ---
+setInterval(() => {
+  // Pick a random bot to play
+  const bot = bots[Math.floor(Math.random() * bots.length)];
+  
+  // Give them XP
+  const xpGained = Math.floor(Math.random() * 50) + 10;
+  bot.xp += xpGained;
+  
+  // Check for level up
+  if (bot.xp >= (bot.level * 100)) {
+    bot.level++;
+    addFeedMessage(`<b>${bot.avatar} ${bot.name}</b> reached <b>Level ${bot.level}</b>!`);
+  }
+
+  saveBots();
+
+  // Add a random action to the live feed (only do this occasionally so it doesn't spam too fast)
+  if (Math.random() > 0.3) {
+    const action = botActions[Math.floor(Math.random() * botActions.length)];
+    addFeedMessage(`<b>${bot.avatar} ${bot.name}</b> ${action} and earned <b>+${xpGained} XP</b>.`);
+  }
+
+  // If the user is on the leaderboard screen, refresh it live
+  if (!$('screen-leaderboard').classList.contains('hidden')) {
+    renderLeaderboard();
+  }
+
+}, 2500); // Every 2.5 seconds
+
+function addFeedMessage(text) {
+  const feed = $('liveFeed');
+  if(!feed) return;
+  
+  const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  const el = document.createElement('div');
+  el.className = 'feed-item';
+  el.innerHTML = `${text}<span class="feed-time">${time}</span>`;
+  
+  feed.prepend(el);
+  
+  // Keep only latest 30 items
+  if (feed.children.length > 30) {
+    feed.removeChild(feed.lastChild);
+  }
+}
+
+function switchTab(tab) {
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+  
+  if (tab === 'scan') {
+    $('nav-scan').classList.add('active');
+    $('screen-home').classList.remove('hidden');
+    setDailyQuote();
+  } else if (tab === 'game') {
+    $('nav-game').classList.add('active');
+    $('screen-game').classList.remove('hidden');
+    renderGameDashboard();
+  } else if (tab === 'leaderboard') {
+    $('nav-leaderboard').classList.add('active');
+    $('screen-leaderboard').classList.remove('hidden');
+    renderLeaderboard();
+  } else if (tab === 'settings') {
+    $('nav-settings').classList.add('active');
+    $('screen-settings').classList.remove('hidden');
+  } else if (tab === 'result') {
+    $('screen-result').classList.remove('hidden');
+  }
+}
+
+// --- LEADERBOARD LOGIC ---
+function renderLeaderboard() {
+  const currentUserTotalXP = state.player.xp + (state.player.level * 100);
+  const userPlayer = { id: "user", name: "You (Detective)", avatar: "🕵️‍♀️", level: state.player.level, xp: currentUserTotalXP, country: "🏴‍☠️", isUser: true };
+  
+  const allPlayers = [...bots, userPlayer];
+  allPlayers.sort((a, b) => b.xp - a.xp);
+
+  const tbody = $('leaderboardBody');
+  tbody.innerHTML = '';
+
+  // Only render top 50 to keep the DOM fast, but include the user even if they are below 50
+  const top50 = allPlayers.slice(0, 50);
+  const userRank = allPlayers.findIndex(p => p.isUser) + 1;
+  
+  if (userRank > 50) {
+    top50.push(allPlayers[userRank - 1]); // Add user to the end of the list if they are low
+  }
+
+  top50.forEach((p) => {
+    const rank = allPlayers.indexOf(p) + 1;
+    const tr = document.createElement('tr');
+    if (p.isUser) tr.className = 'current-user';
+    
+    let rankClass = "";
+    if (rank === 1) rankClass = "top-1";
+    if (rank === 2) rankClass = "top-2";
+    if (rank === 3) rankClass = "top-3";
+    
+    tr.innerHTML = `
+      <td><span class="rank-badge ${rankClass}">#${rank}</span></td>
+      <td>
+        <div style="display:flex; align-items:center; gap:10px;">
+          <span style="font-size:20px;">${p.avatar}</span> 
+          <span>${p.country} ${p.name}</span>
+        </div>
+      </td>
+      <td>Level ${p.level}</td>
+      <td style="text-align: right; color: var(--yellow);">${p.xp} XP</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+// --- SETTINGS ---
+function resetData() {
+  if (confirm("Are you sure? This will delete your XP and reset all bots.")) {
+    localStorage.clear();
+    location.reload();
+  }
+}
+
+// --- SCANNER ---
+const RULES = { sugar:{ red:10, yellow:5 }, sodium:{ red:300, yellow:150 }, fat:{ red:15, yellow:5 }, satFat:{ red:2, yellow:1 } };
+function level(val, rule){ if (val >= rule.red) return 'red'; if (val >= rule.yellow) return 'yellow'; return 'green'; }
+function productScore(p){ const s = [level(p.perServing.sugar, RULES.sugar), level(p.perServing.sodium, RULES.sodium), level(p.perServing.fat, RULES.fat), level(p.perServing.satFat, RULES.satFat)]; if (s.includes('red')) return 'red'; if (s.includes('yellow')) return 'yellow'; return 'green'; }
+
+function startScanFromData(product){ state.scannerProduct = product; state.profileMode = 'child'; renderResult(); switchTab('result'); }
+
+function renderResult(){
+  const p = state.scannerProduct;
+  const score = productScore(p);
+  const totalSugar = +(p.perServing.sugar * p.servings).toFixed(1);
+  
+  $('resName').textContent = p.name.replace(/-/g, ' ');
+  $('resServings').textContent = `${p.servings} servings in packet`;
+  
+  $('resLight').className = `light ${score}`;
+  $('resLight').innerHTML = `<span class="dot ${score}"></span><span>${score==='red'?'High Concern':score==='yellow'?'Moderate':'Safe'}</span>`;
+  
+  let realityText = "";
+  if (score === 'red') {
+    let worst = "";
+    if (level(p.perServing.sodium, RULES.sodium) === 'red') worst = `Sodium (${p.perServing.sodium} mg)`;
+    else if (level(p.perServing.fat, RULES.fat) === 'red') worst = `Total Fat (${p.perServing.fat} g)`;
+    else if (level(p.perServing.satFat, RULES.satFat) === 'red') worst = `Saturated Fat (${p.perServing.satFat} g)`;
+    else worst = `Sugar (${totalSugar} g per pack)`;
+    realityText = `<b>Health Impact Warning</b>This packet is dangerously high in ${worst}. Eating this frequently can lead to health issues.`;
+    $('resReality').className = "reality danger";
+  } else if (score === 'yellow') {
+    realityText = `<b>Moderate Concern</b>This product has borderline levels of fat, sugar, or salt. You should watch your portion size.`;
+    $('resReality').className = "reality warning";
+  } else {
+    realityText = `<b>Good Choice!</b>This product has safe levels of sugar, salt, and fat. You can enjoy this in moderation.`;
+    $('resReality').className = "reality safe";
+  }
+  $('resReality').innerHTML = realityText;
+
+  $('resStats').innerHTML = `
+    <div class="stat"><div class="k">Calories</div><div class="v">${p.perServing.calories} <small>kcal</small></div></div>
+    <div class="stat"><div class="k">Sugar</div><div class="v">${p.perServing.sugar} <small>g</small></div></div>
+    <div class="stat"><div class="k">Sodium</div><div class="v">${p.perServing.sodium} <small>mg</small></div></div>
+    <div class="stat"><div class="k">Total Fat</div><div class="v">${p.perServing.fat} <small>g</small></div></div>
+    <div class="stat"><div class="k">Sat Fat</div><div class="v">${p.perServing.satFat} <small>g</small></div></div>
+    <div class="stat"><div class="k">Protein</div><div class="v">${p.perServing.protein} <small>g</small></div></div>
+  `;
+
+  let warnsHtml = "";
+  if (level(p.perServing.sugar, RULES.sugar) === 'red') warnsHtml += `<div class="warn">⚠️ High Sugar (${p.perServing.sugar}g)</div>`;
+  if (level(p.perServing.sodium, RULES.sodium) === 'red') warnsHtml += `<div class="warn">⚠️ High Sodium (${p.perServing.sodium}mg)</div>`;
+  if (level(p.perServing.fat, RULES.fat) === 'red') warnsHtml += `<div class="warn">⚠️ High Total Fat (${p.perServing.fat}g)</div>`;
+  if (level(p.perServing.satFat, RULES.satFat) === 'red') warnsHtml += `<div class="warn">⚠️ High Sat Fat (${p.perServing.satFat}g)</div>`;
+  if (!warnsHtml) warnsHtml = `<div class="warn ok">✅ No major warnings</div>`;
+  $('resWarnings').innerHTML = warnsHtml;
+
+  $('resAllergens').innerHTML = p.allergens && p.allergens.length ? p.allergens.map(a=>`<span class="chip allergen">${a}</span>`).join('') : `<span class="chip">None listed</span>`;
+  $('resIngredients').innerHTML = p.ingredients ? p.ingredients.map(i=>`<span class="chip">${i}</span>`).join('') : "";
+  $('resRawText').textContent = p.rawText || "No raw text available.";
+  updateProfileAdvice();
+}
+
+window.setProfile = function(mode) {
+  state.profileMode = mode;
+  document.querySelectorAll('.profile-btn').forEach(b=>b.classList.remove('active-child','active-adult'));
+  if(mode==='child') document.querySelectorAll('.profile-btn')[0].classList.add('active-child');
+  else document.querySelectorAll('.profile-btn')[1].classList.add('active-adult');
+  updateProfileAdvice();
+}
+
+function updateProfileAdvice(){
+  const p = state.scannerProduct;
+  const score = productScore(p);
+  const name = p.name.toLowerCase();
+  let advice = "", prec = "", swap = "";
+  
+  if (state.profileMode === 'child') {
+    advice = score !== 'green' ? "Kids: Eating this much fat and salt can affect growth. Try a fruit or nuts instead! 🍎" : "Kids: This is an okay snack, but remember to eat your veggies too! 🥦";
+  } else {
+    advice = score !== 'green' ? "Adults: High fat and sodium can raise blood pressure over time. Limit this to once a week. 🩺" : "Adults: This fits well into a balanced diet. Remember to drink water. 💧";
+  }
+  prec = score !== 'green' ? "⚠️ <b>Precautions:</b> Do not eat this daily. Drink plenty of water. Pair with high-fiber foods." : "✅ <b>Good to go:</b> A decent snack. Just watch your portion size.";
+
+  if (score === 'green') {
+    swap = "✅ <b>Smart Portion:</b> Eat 1 serving. <b>Keep it up!</b> This is a relatively safe choice.";
+  } else {
+    let altHtml = "";
+    if (name.includes('cola') || name.includes('drink') || name.includes('soda') || name.includes('pepsi') || name.includes('juice')) {
+      altHtml = `<ul class="swap-list"><li><b>Coconut Water:</b> Natural electrolytes.</li><li><b>Fresh Lime Water:</b> Hydrating.</li><li><b>Buttermilk (Chaas):</b> Great for digestion.</li><li><b>Green Tea:</b> Antioxidants.</li><li><b>Sparkling Water:</b> Fizz without sugar.</li></ul>`;
+    } else if (name.includes('chip') || name.includes('kurkure') || name.includes('lays') || name.includes('bhujia')) {
+      altHtml = `<ul class="swap-list"><li><b>Roasted Makhana:</b> Light and crunchy.</li><li><b>Roasted Chana:</b> High protein.</li><li><b>Air-popped Popcorn:</b> Whole grain.</li><li><b>Baked Sweet Potato Fries:</b> Healthy fries.</li><li><b>Mixed Nuts:</b> Keeps you full.</li></ul>`;
+    } else if (name.includes('choc') || name.includes('dairy milk') || name.includes('candy') || name.includes('sweet')) {
+      altHtml = `<ul class="swap-list"><li><b>Dark Chocolate (70%+):</b> Less sugar.</li><li><b>Dates:</b> Natural sweetness.</li><li><b>Fruit Chaat:</b> Full of vitamins.</li><li><b>Peanut Butter on Toast:</b> Protein.</li><li><b>Yogurt with Berries:</b> High protein.</li></ul>`;
+    } else if (name.includes('biscuit') || name.includes('marie') || name.includes('cookie')) {
+      altHtml = `<ul class="swap-list"><li><b>Digestive Biscuits:</b> High fiber.</li><li><b>Oatmeal Cookies:</b> Slow-release energy.</li><li><b>Roasted Seeds:</b> Crunchy.</li><li><b>Rice Cakes:</b> Light.</li><li><b>A handful of Almonds:</b> Brain health.</li></ul>`;
+    } else if (name.includes('noodle') || name.includes('maggi') || name.includes('pasta')) {
+      altHtml = `<ul class="swap-list"><li><b>Whole Wheat Pasta:</b> More fiber.</li><li><b>Millet Noodles:</b> High minerals.</li><li><b>Vegetable Poha:</b> Iron-rich.</li><li><b>Oats Upma:</b> Heart-healthy.</li><li><b>Egg Bhurji:</b> High protein.</li></ul>`;
+    } else {
+      altHtml = `<ul class="swap-list"><li><b>Fresh Fruits:</b> Natural sugars.</li><li><b>Nuts & Seeds:</b> Healthy fats.</li><li><b>Plain Yogurt:</b> Probiotics.</li><li><b>Sprouts:</b> High protein.</li><li><b>Roasted Chana:</b> Crunchy.</li></ul>`;
+    }
+    swap = `🔄 <b>Healthy Alternatives:</b>${altHtml}<div style="margin-top: 10px; border-top: 1px solid #bbf7d0; padding-top: 10px;">⚖️ <b>Smart Portion:</b> Limit yourself to <span class="highlight">just 1 serving</span>.</div>`;
+  }
+  $('resAdvice').innerHTML = advice;
+  $('resPrecaution').innerHTML = prec;
+  $('resSwap').innerHTML = swap;
+}
+
+// --- GAME ENGINE ---
+const WORLDS = [
+  { id: 1, title: "Sugar Detective", color: "var(--blue)", icon: "🍭", start: 1, end: 20 },
+  { id: 2, title: "Salt Guardian", color: "var(--green)", icon: "🧂", start: 21, end: 40 },
+  { id: 3, title: "Fat Inspector", color: "var(--yellow)", icon: "🍔", start: 41, end: 60 },
+  { id: 4, title: "Ingredient Decoder", color: "var(--purple)", icon: "🧪", start: 61, end: 80 },
+  { id: 5, title: "Allergen Hero", color: "var(--red)", icon: "🚨", start: 81, end: 100 }
+];
+const GAME_TYPES = [{ icon: "⚡", name: "Quick Quiz" }, { icon: "🤖", name: "Bot Battle" }, { icon: "🔥", name: "Speed Round" }, { icon: "👑", name: "Boss Fight" }];
+
+function renderGameDashboard() {
+  $('statCoins').textContent = state.player.coins;
+  $('statStars').textContent = state.player.stars;
+  $('statLevel').textContent = state.player.level;
+  $('xpText').textContent = `${state.player.xp} / 100`;
+  $('totalXpDisplay').textContent = state.player.xp + (state.player.level * 100);
+
+  if (state.player.xp >= 100) {
+    state.player.xp -= 100;
+    state.player.level++;
+    toast("🎉 LEVEL UP! You are now Level " + state.player.level);
+    saveState();
+  }
+
+  const container = $('worldsContainer');
+  container.innerHTML = '';
+  WORLDS.forEach(world => {
+    const section = document.createElement('div');
+    section.className = 'world-section';
+    section.innerHTML = `<div class="world-header"><span style="font-size:24px">${world.icon}</span><div class="world-title" style="color: ${world.color}">World ${world.id}: ${world.title}</div></div>`;
+    const grid = document.createElement('div'); grid.className = 'level-grid';
+    
+    for (let i = world.start; i <= world.end; i++) {
+      const isUnlocked = i <= state.player.unlockedMax;
+      const stars = state.player.levelStars[i] || 0;
+      const gameType = GAME_TYPES[i % GAME_TYPES.length];
+      const box = document.createElement('div');
+      box.className = `level-box ${!isUnlocked ? 'locked' : ''}`;
+      let starStr = "☆☆☆"; if (stars === 1) starStr = "★☆☆"; if (stars === 2) starStr = "★★☆"; if (stars === 3) starStr = "★★★";
+      box.innerHTML = `<div class="type-icon" title="${gameType.name}">${gameType.icon}</div><div class="level-num">${isUnlocked ? i : '🔒'}</div><div class="level-stars" style="color: ${stars>0?'var(--yellow)':'var(--border)'}">${starStr}</div>`;
+      if (isUnlocked) box.onclick = () => startBattle(i, world.title);
+      grid.appendChild(box);
+    }
+    section.appendChild(grid); container.appendChild(section);
+  });
+}
+
+let battle = null;
+function generateQuestion(levelNum) {
+  const pool = [
+    { q: "Which of these is a hidden sugar name?", opts: ["Maltodextrin", "Sodium", "Palm Oil", "Water"], a: "Maltodextrin", fact: "Maltodextrin is a highly processed sugar!" },
+    { q: "How much sugar is in a 300ml Cola?", opts: ["1g", "10g", "30g+", "0g"], a: "30g+", fact: "A single can has more sugar than the daily limit!" },
+    { q: "What does high Sodium do?", opts: ["Raises blood pressure", "Lowers fat", "Builds muscle", "Gives energy"], a: "Raises blood pressure", fact: "Salt holds water in your body, raising pressure." },
+    { q: "Which is a healthy fat?", opts: ["Olive Oil", "Palm Oil", "Trans Fat", "Lard"], a: "Olive Oil", fact: "Monounsaturated fats from olives are good for the heart." },
+    { q: "Spot the allergen: 'Contains wheat, milk, soy'", opts: ["Wheat", "Salt", "Sugar", "Water"], a: "Wheat", fact: "Wheat is a common allergen. Check labels if you are sensitive!" },
+    { q: "If a packet has 2 servings, and 10g sugar per serving, total sugar?", opts: ["10g", "20g", "5g", "0g"], a: "20g", fact: "You must multiply per-serving by total servings!" },
+    { q: "Which snack is the safest choice?", opts: ["Roasted Chana", "Potato Chips", "Cola", "Candy"], a: "Roasted Chana", fact: "Roasted chana has high protein and fiber, low fat." },
+    { q: "What does 'INS 621' mean?", opts: ["MSG (Flavor enhancer)", "Vitamin C", "Salt", "Sugar"], a: "MSG (Flavor enhancer)", fact: "INS 621 is Monosodium Glutamate, common in chips." },
+    { q: "What is 'Trans Fat'?", opts: ["Worst fat for heart", "Best fat", "A type of sugar", "A vitamin"], a: "Worst fat for heart", fact: "Trans fats raise bad cholesterol and lower good cholesterol." },
+    { q: "How many teaspoons of sugar in 20g of sugar?", opts: ["5 tsp", "1 tsp", "10 tsp", "20 tsp"], a: "5 tsp", fact: "1 teaspoon is roughly 4 grams of sugar." }
+  ];
+  return pool[(levelNum + Math.floor(levelNum/2)) % pool.length];
+}
+
+function startBattle(levelNum, worldTitle) {
+  const qData = generateQuestion(levelNum);
+  const gameType = GAME_TYPES[levelNum % GAME_TYPES.length];
+  battle = { level: levelNum, question: qData, answered: false };
+  $('battleType').textContent = `${gameType.icon} ${gameType.name} - Level ${levelNum}`;
+  $('questionText').textContent = qData.q;
+  $('playerHp').style.width = '100%'; $('botHp').style.width = '100%';
+  $('feedbackText').textContent = '';
+  const optContainer = $('optionsContainer'); optContainer.innerHTML = '';
+  const shuffledOpts = [...qData.opts].sort(() => Math.random() - 0.5);
+  shuffledOpts.forEach(opt => {
+    const btn = document.createElement('button'); btn.className = 'opt'; btn.textContent = opt;
+    btn.onclick = () => handleBattleAnswer(opt, btn); optContainer.appendChild(btn);
+  });
+  $('quizOverlay').classList.remove('hidden');
+}
+
+function handleBattleAnswer(selected, btn) {
+  if (battle.answered) return; battle.answered = true;
+  document.querySelectorAll('.opt').forEach(b => b.disabled = true);
+  const correct = battle.question.a;
+
+  if (selected === correct) {
+    btn.classList.add('correct'); $('botHp').style.width = '0%';
+    $('feedbackText').innerHTML = `💥 Hit! <br><span style="font-size:12px; color:var(--muted); font-weight:normal">${battle.question.fact}</span>`;
+    $('feedbackText').style.color = 'var(--green)';
+    state.player.xp += 20; state.player.coins += 10;
+    const currentStars = state.player.levelStars[battle.level] || 0;
+    if (currentStars < 3) { state.player.stars += (3 - currentStars); state.player.levelStars[battle.level] = 3; }
+    if (battle.level === state.player.unlockedMax) { state.player.unlockedMax++; }
+    saveState(); triggerConfetti();
+    
+    // Live Feed update for User
+    addFeedMessage(`<b>🕵️‍♀️ You</b> won a battle and earned <b>+20 XP</b>!`);
+  } else {
+    btn.classList.add('wrong');
+    document.querySelectorAll('.opt').forEach(b => { if (b.textContent === correct) b.classList.add('correct'); });
+    $('playerHp').style.width = '0%';
+    $('feedbackText').innerHTML = `❌ Missed! <br><span style="font-size:12px; color:var(--muted); font-weight:normal">${battle.question.fact}</span>`;
+    $('feedbackText').style.color = 'var(--red)';
+  }
+  setTimeout(() => { closeQuiz(); switchTab('game'); }, 3500);
+}
+
+function closeQuiz() { $('quizOverlay').classList.add('hidden'); }
+function triggerConfetti() {
+  for (let i = 0; i < 40; i++) {
+    const c = document.createElement('div'); c.className = 'confetti';
+    c.style.left = Math.random() * 100 + 'vw';
+    c.style.backgroundColor = ['#22c55e', '#eab308', '#3b82f6', '#a855f7'][Math.floor(Math.random()*4)];
+    c.style.animationDuration = (Math.random() * 1 + 1) + 's';
+    document.body.appendChild(c); setTimeout(() => c.remove(), 2000);
+  }
+}
+
+// INIT
+$('fileInput').addEventListener('change', async (e)=>{
+  const file = e.target.files && e.target.files[0]; if (!file) return;
+  $('screen-home').innerHTML = `<div style="text-align:center; padding:100px;"><span id="loadingEmoji">📦</span><h1 style="margin-top:24px;">AI is Reading...</h1></div>`;
+  try {
+    const form = new FormData(); form.append('image', file);
+    const res = await fetch('/upload', { method: 'POST', body: form });
+    const data = await res.json();
+    if (!res.ok || data.error) throw new Error(data.error);
+    await new Promise(r => setTimeout(r, 500));
+    startScanFromData(data);
+  } catch (err) { 
+    toast("❌ " + err.message); 
+    location.reload();
+  } finally { e.target.value = ""; }
+});
+
+// Initialize and go to Leaderboard to show off the live feature!
+switchTab('leaderboard');
+</script>
+</body>
+</html>
